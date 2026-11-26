@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "validador-nfe"
+version = "0.1.0"
+description = "Validação da tributação de NF-e (ICMS, ICMS-ST, IPI, PIS/COFINS, IBS/CBS)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "lxml>=5.0",
+    "openpyxl>=3.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+validador-nfe = "validador_nfe.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
