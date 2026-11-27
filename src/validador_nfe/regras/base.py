@@ -7,13 +7,25 @@ para uma base em PostgreSQL ou licenciada, sem mexer no resto do validador.
 from __future__ import annotations
 
 import csv
+import os
+import sys
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
 from validador_nfe.regras.modelo import CHAVES, Contexto, Regra
 
-PASTA_PADRAO = Path(__file__).resolve().parents[3] / "regras"
+
+def _pasta_padrao() -> Path:
+    """Pasta regras/: variável VALIDADOR_REGRAS, ou dentro do executável, ou na raiz do projeto."""
+    if os.environ.get("VALIDADOR_REGRAS"):
+        return Path(os.environ["VALIDADOR_REGRAS"])
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS) / "regras"  # executável gerado pelo PyInstaller / flet pack
+    return Path(__file__).resolve().parents[3] / "regras"
+
+
+PASTA_PADRAO = _pasta_padrao()
 
 
 class ErroBase(Exception):
