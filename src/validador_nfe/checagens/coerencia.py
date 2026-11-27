@@ -161,15 +161,7 @@ def _checar_ibscbs(nota: Nota, item: Item) -> list[Divergencia]:
     elif cst and not ccl.startswith(cst):
         saida.append(_d("C014", Severidade.ALERTA, "cClassTrib não pertence ao CST informado (os 3 primeiros dígitos diferem)",
                         item.numero, campo="IBSCBS/cClassTrib", esperado=f"{cst}xxx", encontrado=ccl))
-    if emissao.year == 2026 and cst == "000":
-        for nome, aliq_teste in p.ALIQUOTAS_TESTE_2026.items():
-            trib = item.tributo(nome)
-            if trib is None or trib.aliquota is None:
-                continue
-            if trib.aliquota != aliq_teste:
-                saida.append(_d("C015", Severidade.ALERTA, f"{nome}: alíquota diferente da alíquota de teste de 2026",
-                                item.numero, campo=f"p{nome}", esperado=str(aliq_teste),
-                                encontrado=str(trib.aliquota), fundamento=p.FUNDAMENTO_TESTE_2026))
+    # As alíquotas de IBS/CBS são conferidas pela base de regras (regras/reforma_ibs_cbs.csv)
     return saida
 
 

@@ -1,0 +1,6 @@
+# PIS/COFINS, alíquota básica (CST 01). Monofásicos e alíquota zero ainda não cadastrados.
+id;tributo;vigencia_inicio;vigencia_fim;uf_origem;uf_destino;origem_mercadoria;tipo_destinatario;regime;cfop;ncm;cest;cst;aliquota;reducao_base;mva;fundamento;observacao
+PIS-NAO-CUMULATIVO;PIS;2002-12-01;;;;;;nao_cumulativo;;;;01;1.65;;;Lei 10.637/2002, art. 2º;Lucro Real
+COFINS-NAO-CUMULATIVO;COFINS;2004-02-01;;;;;;nao_cumulativo;;;;01;7.60;;;Lei 10.833/2003, art. 2º;Lucro Real
+PIS-CUMULATIVO;PIS;1999-02-01;;;;;;cumulativo;;;;01;0.65;;;Lei 9.715/1998, art. 8º;Lucro Presumido
+COFINS-CUMULATIVO;COFINS;1999-02-01;;;;;;cumulativo;;;;01;3.00;;;Lei 9.718/1998, art. 8º;Lucro Presumido

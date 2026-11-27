@@ -1,0 +1,5 @@
+# IBS/CBS. 2026 é ano de teste com alíquotas simbólicas. Conferir na LC 214/2025.
+id;tributo;vigencia_inicio;vigencia_fim;uf_origem;uf_destino;origem_mercadoria;tipo_destinatario;regime;cfop;ncm;cest;cst;aliquota;reducao_base;mva;fundamento;observacao
+CBS-TESTE-2026;CBS;2026-01-01;2026-12-31;;;;;;;;;000;0.90;;;LC 214/2025, art. 346 (conferir);Ano de teste, compensável com PIS/COFINS
+IBS-UF-TESTE-2026;IBS_UF;2026-01-01;2026-12-31;;;;;;;;;000;0.10;;;LC 214/2025, art. 343 (conferir);Ano de teste
+IBS-MUN-TESTE-2026;IBS_MUN;2026-01-01;2026-12-31;;;;;;;;;000;0.00;;;LC 214/2025, art. 343 (conferir);Ano de teste

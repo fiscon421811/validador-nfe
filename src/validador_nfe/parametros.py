@@ -26,11 +26,6 @@ CST_SEM_ICMS = {"40", "41", "50"}
 CST_TRIBUTADO_INTEGRAL = {"00"}
 CST_COM_REDUCAO = {"20", "70"}
 
-# Reforma Tributária (LC 214/2025): ano de teste com alíquotas simbólicas
+# Reforma Tributária (LC 214/2025): grupo IBSCBS esperado a partir do ano de teste.
+# As alíquotas ficam na base de regras (regras/reforma_ibs_cbs.csv).
 INICIO_IBSCBS = date(2026, 1, 1)
-ALIQUOTAS_TESTE_2026 = {
-    "CBS": Decimal("0.90"),
-    "IBS_UF": Decimal("0.10"),
-    "IBS_MUN": Decimal("0.00"),
-}
-FUNDAMENTO_TESTE_2026 = "LC 214/2025, arts. 343 a 346 (conferir)"

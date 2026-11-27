@@ -1,0 +1,6 @@
+# ICMS próprio com origem em SP. Revisar antes de uso em produção.
+id;tributo;vigencia_inicio;vigencia_fim;uf_origem;uf_destino;origem_mercadoria;tipo_destinatario;regime;cfop;ncm;cest;cst;aliquota;reducao_base;mva;fundamento;observacao
+SP-ICMS-INTERNA;ICMS;2024-01-01;;SP;SP;;;;5;;;;18;;;RICMS/SP (Decreto 45.490/2000), art. 52, I;Alíquota interna padrão. Há produtos com 7%, 12% e 25% ainda não cadastrados. Vigência inicial simplificada.
+SP-ICMS-INTER-12;ICMS;1989-06-01;;SP;MG|PR|RJ|RS|SC;;;;6;;;;12;;;Resolução do Senado 22/1989;Sul e Sudeste, exceto ES
+SP-ICMS-INTER-7;ICMS;1989-06-01;;SP;AC|AL|AM|AP|BA|CE|DF|ES|GO|MA|MS|MT|PA|PB|PE|PI|RN|RO|RR|SE|TO;;;;6;;;;7;;;Resolução do Senado 22/1989;Norte, Nordeste, Centro-Oeste e ES
+SP-ICMS-INTER-4;ICMS;2013-01-01;;SP;;1|2|3|8;;;6;;;;4;;;Resolução do Senado 13/2012;Mercadoria importada ou com conteúdo de importação acima de 40%
