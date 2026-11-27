@@ -9,3 +9,4 @@ schemas/
 build/
 dist/
 *.spec
+regras/tipi/

@@ -8,7 +8,9 @@
 # Resultado: dist\ValidadorNFe.exe
 
 param(
-    [string]$Py = "$env:LOCALAPPDATA\Python\pythoncore-3.14-64\python.exe"
+    [string]$Py = "$env:LOCALAPPDATA\Python\pythoncore-3.14-64\python.exe",
+    # Planilha da TIPI já baixada (use se o download automático falhar)
+    [string]$TipiXlsx = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,19 +20,30 @@ if (-not (Test-Path $Py)) {
     Write-Error "Python não encontrado em $Py. Passe o caminho com -Py."
 }
 
-Write-Host "1/4 Instalando dependências..." -ForegroundColor Cyan
+Write-Host "1/5 Instalando dependências..." -ForegroundColor Cyan
 & $Py -m pip install -e ".[gui,exe]"
 if ($LASTEXITCODE -ne 0) { throw "Falha ao instalar dependências" }
 
-Write-Host "2/4 Rodando os testes..." -ForegroundColor Cyan
+Write-Host "2/5 Rodando os testes..." -ForegroundColor Cyan
 & $Py -m pytest -q
 if ($LASTEXITCODE -ne 0) { throw "Testes falharam; executável não gerado" }
 
-Write-Host "3/4 Gerando o ícone..." -ForegroundColor Cyan
+Write-Host "3/5 Gerando o ícone..." -ForegroundColor Cyan
 & $Py ferramentas\gerar_icone.py
 if ($LASTEXITCODE -ne 0) { throw "Falha ao gerar o ícone" }
 
-Write-Host "4/4 Empacotando (pode levar alguns minutos)..." -ForegroundColor Cyan
+Write-Host "4/5 Baixando a TIPI vigente para embutir no executável..." -ForegroundColor Cyan
+if ($TipiXlsx) {
+    & $Py -m validador_nfe.tipi --pasta regras\tipi --embutida --importar $TipiXlsx
+} else {
+    & $Py -m validador_nfe.tipi --pasta regras\tipi --embutida
+}
+if ($LASTEXITCODE -ne 0) {
+    throw ("Não foi possível obter a TIPI. Baixe a planilha .xlsx no site da Receita Federal e rode de novo com " +
+           "-TipiXlsx C:\caminho\tipi.xlsx")
+}
+
+Write-Host "5/5 Empacotando (pode levar alguns minutos)..." -ForegroundColor Cyan
 & $Py -m flet_cli.cli pack app_gui.py `
     --name ValidadorNFe `
     --icon assets\icone.ico `

@@ -30,6 +30,23 @@ validador-nfe-gui --web           # no navegador
 A tela lista as notas com a situação de cada uma e, ao clicar, mostra as divergências com o fundamento.
 O regime de PIS/COFINS e a TIPI podem ser escolhidos na própria tela, e o relatório sai em Excel ou JSON.
 
+## TIPI (alíquotas de IPI)
+
+A TIPI não precisa ser carregada à mão:
+
+- **Embutida:** o script do executável baixa a TIPI vigente da Receita Federal e a coloca dentro do `.exe`.
+- **Atualização automática:** ao abrir, o app verifica (no máximo uma vez por dia) se a Receita publicou uma
+  planilha nova. Se mudou, grava a nova versão em `%LOCALAPPDATA%\ValidadorNFe\tipi\`, recarrega as regras e
+  avisa quantas alíquotas mudaram, com um relatório `mudancas_AAAAMMDD.csv` (NCM, alíquota antes e depois).
+- **Versões:** cada versão vale desde o dia em que foi detectada; notas anteriores são conferidas com a versão
+  anterior. A data real está no decreto de cada alteração, então notas emitidas entre o decreto e a detecção
+  podem ser conferidas com a alíquota antiga.
+- **Manual:** o botão "Atualizar TIPI" força a verificação, e "Importar TIPI" aceita a planilha `.xlsx` baixada
+  à mão (útil se o site da Receita mudar de endereço). Pela linha de comando: `python -m validador_nfe.tipi`.
+- Se a Receita mudar o endereço da planilha, defina `VALIDADOR_TIPI_URL` com o link direto do `.xlsx`.
+
+Ex-tarifários (coluna EX da TIPI) ainda não são conferidos.
+
 ## Executável para Windows
 
 O executável é gerado no seu computador, com o Python que você já usa. No PowerShell, na pasta do projeto:

@@ -77,7 +77,7 @@ class TelaValidador:
             options=[ft.DropdownOption(key=k, text=v) for k, v in FILTROS.items()],
             on_select=self.ao_mudar_filtro,
         )
-        self.rotulo_tipi = ft.Text("TIPI: não carregada", size=12, color=ft.Colors.ON_SURFACE_VARIANT)
+        self.rotulo_tipi = ft.Text(f"TIPI: {sessao.descricao_tipi}", size=12, color=ft.Colors.ON_SURFACE_VARIANT)
 
     # ---------- montagem ----------
 
@@ -90,7 +90,10 @@ class TelaValidador:
                 ft.Button("Abrir XMLs", icon=ft.Icons.UPLOAD_FILE, on_click=self.abrir_arquivos),
                 ft.Button("Abrir pasta", icon=ft.Icons.FOLDER_OPEN, on_click=self.abrir_pasta),
                 self.regime,
-                ft.OutlinedButton("Carregar TIPI", icon=ft.Icons.TABLE_CHART, on_click=self.abrir_tipi),
+                ft.OutlinedButton("Atualizar TIPI", icon=ft.Icons.SYNC, on_click=self.verificar_tipi,
+                                  tooltip="Verifica agora se a Receita publicou nova TIPI"),
+                ft.TextButton("Importar TIPI", icon=ft.Icons.TABLE_CHART, on_click=self.abrir_tipi,
+                              tooltip="Importa a planilha .xlsx da TIPI baixada manualmente"),
                 ft.OutlinedButton("Exportar Excel", icon=ft.Icons.GRID_ON, on_click=self.exportar_excel),
                 ft.OutlinedButton("Exportar JSON", icon=ft.Icons.DATA_OBJECT, on_click=self.exportar_json),
                 ft.TextButton("Limpar", icon=ft.Icons.DELETE_SWEEP, on_click=self.limpar),
@@ -250,19 +253,30 @@ class TelaValidador:
             novos = await self._em_segundo_plano(self.sessao.carregar, [Path(pasta)])
             self.avisar(f"{novos} nota(s) validada(s) da pasta")
 
+    def _depois_tipi(self, r) -> None:
+        self.rotulo_tipi.value = f"TIPI: {self.sessao.descricao_tipi}"
+        self.status.value = f"Base de regras: {len(self.sessao.base)} regras"
+        self.atualizar()
+        texto = r.mensagem
+        if r.relatorio:
+            texto += f". Detalhes em {r.relatorio}"
+        self.avisar(texto)
+
+    async def verificar_tipi(self, _=None, forcar: bool = True) -> None:
+        r = await self._em_segundo_plano(self.sessao.atualizar_tipi, forcar)
+        if forcar or r.atualizou:
+            self._depois_tipi(r)
+
     async def abrir_tipi(self, _=None) -> None:
-        arquivos = await self.picker.pick_files(dialog_title="CSV da TIPI (ncm;aliquota)",
-                                                file_type=ft.FilePickerFileType.CUSTOM, allowed_extensions=["csv"])
+        arquivos = await self.picker.pick_files(dialog_title="Planilha da TIPI (.xlsx) baixada da Receita",
+                                                file_type=ft.FilePickerFileType.CUSTOM, allowed_extensions=["xlsx"])
         if arquivos and arquivos[0].path:
-            caminho = Path(arquivos[0].path)
             try:
-                await self._em_segundo_plano(self.sessao.definir_tipi, caminho)
+                r = await self._em_segundo_plano(self.sessao.importar_tipi, Path(arquivos[0].path))
             except Exception as exc:  # noqa: BLE001 - mostrar qualquer erro de leitura ao usuário
-                self.avisar(f"Não foi possível ler a TIPI: {exc}")
+                self.avisar(f"Não foi possível importar a TIPI: {exc}")
                 return
-            self.rotulo_tipi.value = f"TIPI: {caminho.name}"
-            self.status.value = f"Base de regras: {len(self.sessao.base)} regras"
-            self.atualizar()
+            self._depois_tipi(r)
 
     async def ao_mudar_regime(self, e) -> None:
         await self._em_segundo_plano(self.sessao.definir_regime, self.regime.value or "")
@@ -294,12 +308,15 @@ class TelaValidador:
         self.atualizar()
 
 
-def criar_app(caminhos_iniciais: list[Path] | None = None):
+def criar_app(caminhos_iniciais: list[Path] | None = None, verificar_tipi: bool = True):
     def main(page: ft.Page) -> None:
         tela = TelaValidador(page, Sessao())
         if caminhos_iniciais:
             tela.sessao.carregar(caminhos_iniciais)
         tela.montar()
+        if verificar_tipi:
+            # verificação automática ao abrir (no máximo 1x por dia); só avisa se algo mudou
+            page.run_task(tela.verificar_tipi, None, False)
 
     return main
 

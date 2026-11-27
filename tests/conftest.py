@@ -5,6 +5,12 @@ import pytest
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
+@pytest.fixture(autouse=True)
+def dados_isolados(tmp_path, monkeypatch):
+    """Nenhum teste lê ou grava a TIPI baixada na pasta real do usuário."""
+    monkeypatch.setenv("VALIDADOR_DADOS", str(tmp_path / "dados"))
+
+
 @pytest.fixture
 def xml_ok() -> str:
     return (FIXTURES / "nfe_ok.xml").read_text(encoding="utf-8")
