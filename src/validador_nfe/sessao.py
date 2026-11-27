@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from pathlib import Path
 
+from validador_nfe import tipi
 from validador_nfe.regras import BaseRegras, Perfil
 from validador_nfe.regras.base import PASTA_PADRAO
 from validador_nfe.relatorio import gerar_excel, gerar_json, resumo
@@ -61,9 +62,33 @@ class Sessao:
         self.revalidar()
 
     def definir_tipi(self, caminho: Path | None) -> None:
+        """Usa um CSV avulso ncm;aliquota no lugar das versões guardadas da TIPI."""
         self.tipi = caminho
-        self.base = BaseRegras.da_pasta(self.pasta_regras, tipi=caminho)
+        self.recarregar_base()
+
+    def recarregar_base(self) -> None:
+        self.base = BaseRegras.da_pasta(self.pasta_regras, tipi=self.tipi)
         self.revalidar()
+
+    @property
+    def descricao_tipi(self) -> str:
+        return self.base.tipi_descricao
+
+    def atualizar_tipi(self, forcar: bool = False) -> tipi.ResultadoAtualizacao:
+        """Verifica a TIPI na Receita (1x por dia, salvo forcar) e recarrega as regras se mudou."""
+        r = tipi.atualizar(pastas_existentes=[self.pasta_regras / "tipi"], forcar=forcar)
+        if r.atualizou:
+            self.recarregar_base()
+        return r
+
+    def importar_tipi(self, planilha: Path) -> tipi.ResultadoAtualizacao:
+        """Importa uma planilha .xlsx da TIPI baixada manualmente."""
+        r = tipi.importar(planilha.read_bytes(), tipi.pasta_dados(), str(planilha),
+                          pastas_existentes=[self.pasta_regras / "tipi"])
+        if r.atualizou:
+            self.tipi = None
+            self.recarregar_base()
+        return r
 
     def limpar(self) -> None:
         self.arquivos, self.resultados = [], []

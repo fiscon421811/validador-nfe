@@ -12,7 +12,7 @@ from validador_nfe.regras.base import ler_csv, ler_tipi
 NC = Perfil(regime_pis_cofins="nao_cumulativo")
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def base() -> BaseRegras:
     return BaseRegras.da_pasta()
 
