@@ -15,9 +15,11 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
+gui = ["flet>=1.0,<2"]
 
 [project.scripts]
 validador-nfe = "validador_nfe.cli:main"
+validador-nfe-gui = "validador_nfe.gui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
