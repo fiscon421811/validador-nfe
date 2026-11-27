@@ -30,6 +30,27 @@ validador-nfe-gui --web           # no navegador
 A tela lista as notas com a situação de cada uma e, ao clicar, mostra as divergências com o fundamento.
 O regime de PIS/COFINS e a TIPI podem ser escolhidos na própria tela, e o relatório sai em Excel ou JSON.
 
+## Enquadramento por item
+
+Depois da análise, a opção **Mostrar → Enquadramento por item** mostra, para cada item da nota, como cada
+tributo se enquadra para o NCM informado:
+
+| Linha | O que mostra |
+| --- | --- |
+| NCM | se o NCM informado consta na TIPI vigente (não sugere NCM pela descrição) |
+| CBS / IBS | CST, cClassTrib e alíquotas; "Enquadrado" quando batem com a regra vigente |
+| ICMS / ICMS-ST | CST/CSOSN, se há ST e a alíquota prevista em SP |
+| PIS / COFINS | CST (ex.: Monofásico para CST 04) e alíquotas conferidas pelo regime |
+| IPI | Tributado ou NT, alíquota da TIPI × nota |
+| CEST | CEST informado |
+| Base legal | fundamentos das regras usadas |
+
+Cada linha diz se foi **conferida pela base** de regras ou se é só **conforme a nota** (ainda sem regra para
+conferir: ICMS-ST, monofásicos e a tabela CEST × NCM). Divergências aparecem em vermelho.
+O mesmo resumo sai na aba "Enquadramento" do Excel e no campo `enquadramento` do JSON.
+
+![Enquadramento por item](docs/enquadramento.png)
+
 ## TIPI (alíquotas de IPI)
 
 A TIPI não precisa ser carregada à mão:

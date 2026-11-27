@@ -48,6 +48,7 @@ def gerar_json(resultados: list[Resultado], destino: Path) -> None:
                 "numero": r.nota.numero if r.nota else None,
                 "situacao": r.situacao,
                 "divergencias": [d.como_dict() for d in r.divergencias],
+                "enquadramento": [e.como_dict() for e in r.enquadramentos],
             }
             for r in resultados
         ],
@@ -82,4 +83,30 @@ def gerar_excel(resultados: list[Resultado], destino: Path) -> None:
             sum(d.severidade.value == "erro" for d in r.divergencias),
             sum(d.severidade.value == "alerta" for d in r.divergencias),
         ])
+
+    if any(r.enquadramentos for r in resultados):
+        _aba_enquadramento(wb, resultados)
     wb.save(destino)
+
+
+_ORIGEM = {"base": "Conferido pela base", "nota": "Conforme a nota"}
+
+
+def _aba_enquadramento(wb: Workbook, resultados: list[Resultado]) -> None:
+    ws = wb.create_sheet("Enquadramento")
+    ws.append(["Arquivo", "Número", "Item", "Descrição", "NCM", "Tributo", "Situação", "Detalhe", "Origem",
+               "Divergente", "Fundamento"])
+    for cel in ws[1]:
+        cel.font = Font(bold=True)
+    for r in resultados:
+        for e in r.enquadramentos:
+            for linha in e.linhas:
+                ws.append([r.arquivo, r.nota.numero if r.nota else None, e.item, e.descricao, e.ncm, linha.tributo,
+                           linha.situacao, linha.detalhe, _ORIGEM.get(linha.origem, linha.origem),
+                           "sim" if linha.divergente else "", linha.fundamento])
+                if linha.divergente:
+                    ws.cell(row=ws.max_row, column=7).fill = PatternFill("solid", fgColor=_CORES["erro"])
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = ws.dimensions
+    for col, largura in zip("ABCDEFGHIJK", (28, 10, 6, 36, 12, 16, 20, 70, 20, 10, 50)):
+        ws.column_dimensions[col].width = largura

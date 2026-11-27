@@ -14,13 +14,16 @@ from pathlib import Path
 import flet as ft
 
 from validador_nfe.divergencia import Divergencia
+from validador_nfe.enquadramento import EnquadramentoItem, Linha
 from validador_nfe.sessao import REGIMES, Sessao
 from validador_nfe.validador import Resultado
 
 COR_SITUACAO = {"ok": ft.Colors.GREEN_600, "com alertas": ft.Colors.AMBER_700, "com erros": ft.Colors.RED_600}
 ICONE_SITUACAO = {"ok": ft.Icons.CHECK_CIRCLE, "com alertas": ft.Icons.WARNING_AMBER, "com erros": ft.Icons.ERROR}
 COR_SEVERIDADE = {"erro": ft.Colors.RED_600, "alerta": ft.Colors.AMBER_700, "info": ft.Colors.BLUE_600}
-FILTROS = {"todas": "Todas", "erro": "Só erros", "alerta": "Só alertas"}
+FILTROS = {"todas": "Todas as divergências", "erro": "Só erros", "alerta": "Só alertas",
+           "enquadramento": "Enquadramento por item"}
+ORIGEM = {"base": ("Conferido pela base", ft.Colors.GREEN_700), "nota": ("Conforme a nota", ft.Colors.BLUE_GREY_600)}
 
 
 def _cartao(titulo: str, valor: ft.Text, cor: str) -> ft.Container:
@@ -59,6 +62,7 @@ class TelaValidador:
             data_row_max_height=float("inf"),
             heading_row_color=ft.Colors.SURFACE_CONTAINER_HIGHEST,
         )
+        self.painel_enq = ft.Column(spacing=12, visible=False)
         self.vazio = ft.Text("Abra um XML ou uma pasta de notas para começar.", color=ft.Colors.ON_SURFACE_VARIANT)
 
         self.regime = ft.Dropdown(
@@ -72,7 +76,7 @@ class TelaValidador:
         self.seletor_filtro = ft.Dropdown(
             label="Mostrar",
             value="todas",
-            width=160,
+            width=280,
             dense=True,
             options=[ft.DropdownOption(key=k, text=v) for k, v in FILTROS.items()],
             on_select=self.ao_mudar_filtro,
@@ -127,7 +131,8 @@ class TelaValidador:
                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                            vertical_alignment=ft.CrossAxisAlignment.START),
                     self.vazio,
-                    ft.Column([ft.Row([self.tabela], scroll=ft.ScrollMode.AUTO)], scroll=ft.ScrollMode.AUTO, expand=True),
+                    ft.Column([ft.Row([self.tabela], scroll=ft.ScrollMode.AUTO), self.painel_enq],
+                              scroll=ft.ScrollMode.AUTO, expand=True),
                 ],
                 expand=True,
             ),
@@ -181,6 +186,7 @@ class TelaValidador:
             self.cabecalho_nota.controls = []
             self.tabela.rows = []
             self.tabela.visible = False
+            self.painel_enq.visible = False
             return
         n = res.nota
         if n:
@@ -196,13 +202,48 @@ class TelaValidador:
         situacao = ft.Text(res.situacao.upper(), color=COR_SITUACAO[res.situacao], weight=ft.FontWeight.BOLD)
         self.cabecalho_nota.controls = [*linhas, situacao]
 
+        self.vazio.value = "Abra um XML ou uma pasta de notas para começar."
+        if self.filtro == "enquadramento":
+            self.tabela.visible = False
+            self.painel_enq.controls = [self._cartao_item(e) for e in res.enquadramentos]
+            self.painel_enq.visible = bool(res.enquadramentos)
+            if not res.enquadramentos:
+                self.vazio.value, self.vazio.visible = "Sem enquadramento: a nota não foi lida ou a base de regras está desligada.", True
+            return
+        self.painel_enq.visible = False
         visiveis = [d for d in res.divergencias if self.filtro == "todas" or d.severidade.value == self.filtro]
         self.tabela.rows = [self._linha_divergencia(d) for d in visiveis]
         self.tabela.visible = bool(visiveis)
         if not res.divergencias:
             self.vazio.value, self.vazio.visible = "Nenhuma divergência encontrada nesta nota.", True
-        else:
-            self.vazio.value = "Abra um XML ou uma pasta de notas para começar."
+
+    def _cartao_item(self, e: EnquadramentoItem) -> ft.Container:
+        linhas = [self._linha_enquadramento(linha) for linha in e.linhas]
+        base_legal = "; ".join(e.base_legal) or "nenhuma regra da base se aplicou (só leitura da nota)"
+        linhas.append(ft.Row([
+            ft.Text("Base legal", width=150, weight=ft.FontWeight.BOLD, size=13),
+            ft.Text(base_legal, size=12, italic=True, expand=True, selectable=True),
+        ], vertical_alignment=ft.CrossAxisAlignment.START))
+        return ft.Container(
+            content=ft.Column([
+                ft.Text(f"Item {e.item} · {e.descricao}", size=14, weight=ft.FontWeight.BOLD),
+                ft.Divider(height=1),
+                *linhas,
+            ], spacing=6),
+            padding=12,
+            border=ft.Border.all(1, ft.Colors.OUTLINE_VARIANT),
+            border_radius=8,
+        )
+
+    def _linha_enquadramento(self, linha: Linha) -> ft.Row:
+        origem, cor_origem = ORIGEM.get(linha.origem, (linha.origem, ft.Colors.ON_SURFACE_VARIANT))
+        cor = ft.Colors.RED_600 if linha.divergente else None
+        return ft.Row([
+            ft.Text(linha.tributo, width=150, weight=ft.FontWeight.BOLD, size=13),
+            ft.Text(linha.situacao, width=170, color=cor, weight=ft.FontWeight.BOLD, size=13),
+            ft.Text(linha.detalhe, size=12, expand=True, selectable=True),
+            ft.Container(ft.Text(origem, size=11, color=cor_origem), width=130),
+        ], vertical_alignment=ft.CrossAxisAlignment.START)
 
     def _linha_divergencia(self, d: Divergencia) -> ft.DataRow:
         sev = d.severidade.value
