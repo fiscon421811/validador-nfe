@@ -16,6 +16,22 @@ validador-nfe notas/ --regime-pis-cofins nao_cumulativo --tipi tipi.csv   # conf
 validador-nfe notas/ --sem-regras   # só checagens da Fase 0
 ```
 
+## Interface gráfica
+
+```bash
+pip install -e ".[gui]"
+validador-nfe-gui                 # janela de desktop
+validador-nfe-gui notas/          # abre já validando uma pasta
+validador-nfe-gui --web           # no navegador
+```
+
+![Interface](docs/interface.png)
+
+A tela lista as notas com a situação de cada uma e, ao clicar, mostra as divergências com o fundamento.
+O regime de PIS/COFINS e a TIPI podem ser escolhidos na própria tela, e o relatório sai em Excel ou JSON.
+
+## Linha de comando
+
 O comando sai com código 1 se alguma nota tiver erro, o que permite usá-lo em pipelines.
 
 ```python
