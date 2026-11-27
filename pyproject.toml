@@ -15,7 +15,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
-gui = ["flet>=1.0,<2"]
+gui = ["flet>=1.0.5,<1.1"]
+exe = ["flet>=1.0.5,<1.1", "flet-cli>=1.0.5,<1.1", "flet-desktop>=1.0.5,<1.1", "pyinstaller>=6.16", "pillow>=10"]
 
 [project.scripts]
 validador-nfe = "validador_nfe.cli:main"

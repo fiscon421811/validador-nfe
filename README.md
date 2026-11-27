@@ -30,6 +30,23 @@ validador-nfe-gui --web           # no navegador
 A tela lista as notas com a situação de cada uma e, ao clicar, mostra as divergências com o fundamento.
 O regime de PIS/COFINS e a TIPI podem ser escolhidos na própria tela, e o relatório sai em Excel ou JSON.
 
+## Executável para Windows
+
+O executável é gerado no seu computador, com o Python que você já usa. No PowerShell, na pasta do projeto:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ferramentas\gerar_exe.ps1
+```
+
+O script instala as dependências (`.[gui,exe]`), roda os testes, gera o ícone e empacota com `flet pack`.
+O resultado é `dist\ValidadorNFe.exe`, um arquivo único com o ícone e a base de regras dentro.
+Por padrão ele usa `%LOCALAPPDATA%\Python\pythoncore-3.14-64\python.exe`; para outro Python, passe `-Py "C:\caminho\python.exe"`.
+
+<img src="assets/icone.png" width="96" alt="Ícone">
+
+O ícone é desenhado por `ferramentas/gerar_icone.py` (Pillow). Para trocar cores ou formas, edite o script e gere de novo.
+Para usar outra base de regras com o executável, defina a variável de ambiente `VALIDADOR_REGRAS` com a pasta dos CSV.
+
 ## Linha de comando
 
 O comando sai com código 1 se alguma nota tiver erro, o que permite usá-lo em pipelines.

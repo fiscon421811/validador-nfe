@@ -6,3 +6,6 @@ __pycache__/
 relatorio*.json
 notas_reais/
 schemas/
+build/
+dist/
+*.spec
