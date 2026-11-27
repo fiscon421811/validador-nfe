@@ -1,4 +1,4 @@
-# Gera o executável do Validador de NF-e para Windows.
+﻿# Gera o executável do Validador de NF-e para Windows.
 #
 # Uso, na pasta do projeto, no PowerShell:
 #   powershell -ExecutionPolicy Bypass -File ferramentas\gerar_exe.ps1
@@ -29,8 +29,12 @@ Write-Host "2/5 Rodando os testes..." -ForegroundColor Cyan
 if ($LASTEXITCODE -ne 0) { throw "Testes falharam; executável não gerado" }
 
 Write-Host "3/5 Gerando o ícone..." -ForegroundColor Cyan
-& $Py ferramentas\gerar_icone.py
-if ($LASTEXITCODE -ne 0) { throw "Falha ao gerar o ícone" }
+if (Test-Path assets\icone.ico) {
+    Write-Host "    ícone já existe em assets\icone.ico (apague para gerar de novo)"
+} else {
+    & $Py ferramentas\gerar_icone.py
+    if ($LASTEXITCODE -ne 0) { throw "Falha ao gerar o ícone" }
+}
 
 Write-Host "4/5 Baixando a TIPI vigente para embutir no executável..." -ForegroundColor Cyan
 if ($TipiXlsx) {
@@ -39,8 +43,9 @@ if ($TipiXlsx) {
     & $Py -m validador_nfe.tipi --pasta regras\tipi --embutida
 }
 if ($LASTEXITCODE -ne 0) {
-    throw ("Não foi possível obter a TIPI. Baixe a planilha .xlsx no site da Receita Federal e rode de novo com " +
-           "-TipiXlsx C:\caminho\tipi.xlsx")
+    throw ("Não foi possível obter a TIPI. Baixe a planilha .xlsx em " +
+           "https://www.gov.br/receitafederal/pt-br/acesso-a-informacao/legislacao/documentos-e-arquivos " +
+           "e rode de novo com -TipiXlsx C:\caminho\tipi.xlsx")
 }
 
 Write-Host "5/5 Empacotando (pode levar alguns minutos)..." -ForegroundColor Cyan

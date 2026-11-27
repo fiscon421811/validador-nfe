@@ -34,16 +34,22 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 
-# Páginas da Receita Federal onde o link da planilha da TIPI é procurado. Se a Receita mudar o
-# endereço, ajuste aqui ou defina VALIDADOR_TIPI_URL com o link direto do .xlsx.
-PAGINAS_TIPI = [
-    "https://www.gov.br/receitafederal/pt-br/acesso-a-informacao/legislacao/documentos-e-arquivos/tipi",
-    "https://www.gov.br/receitafederal/pt-br/assuntos/aduana-e-comercio-exterior/classificacao-fiscal-de-mercadorias/tipi",
+# Endereços da planilha da TIPI no portal da Receita Federal (gov.br, Plone). São tentados em ordem;
+# o primeiro que devolver uma planilha válida é usado. Se a Receita mudar o endereço, ajuste aqui
+# ou defina VALIDADOR_TIPI_URL com o link direto do .xlsx.
+_DOCS = "https://www.gov.br/receitafederal/pt-br/acesso-a-informacao/legislacao/documentos-e-arquivos"
+LINKS_TIPI = [
+    f"{_DOCS}/tipi.xlsx/@@download/file",
+    f"{_DOCS}/tipi-em-excel.xlsx/@@download/file",
+    f"{_DOCS}/tipi.xlsx",
+    f"{_DOCS}/tipi-em-excel.xlsx",
 ]
+# Páginas onde procurar o link, se nenhum dos endereços acima funcionar
+PAGINAS_TIPI = [_DOCS]
 INTERVALO_VERIFICACAO = timedelta(hours=24)
 MINIMO_NCMS = 5000  # uma planilha válida da TIPI tem cerca de 10 mil NCMs
 INICIO_DECRETO_ATUAL = date(2022, 4, 1)  # Decreto 11.158/2022
-USER_AGENT = "validador-nfe (verificacao da TIPI)"
+USER_AGENT = "Mozilla/5.0 (compatible; validador-nfe; verificacao da TIPI)"
 
 
 class ErroTipi(Exception):
@@ -248,24 +254,69 @@ def _baixar(url: str, timeout: int = 60) -> bytes:
         return r.read()
 
 
-def encontrar_link_planilha(baixar: Callable[[str], bytes] = _baixar) -> str:
+def _para_download(link: str) -> str:
+    """No gov.br, o link "/view" abre a página do arquivo; "/@@download/file" baixa o arquivo."""
+    link = re.sub(r"/view/?$", "", link)
+    return link if "@@download" in link else f"{link.rstrip('/')}/@@download/file"
+
+
+def _links_na_pagina(pagina: str, baixar: Callable[[str], bytes]) -> list[str]:
+    html = baixar(pagina).decode("utf-8", errors="replace")
+    parser = _Links()
+    parser.feed(html)
+    achados = []
+    for link in parser.links:
+        baixo = link.lower()
+        if "tipi" in baixo and ("xls" in baixo or "excel" in baixo):
+            achados.append(_para_download(urllib.parse.urljoin(pagina, link)))
+    return list(dict.fromkeys(achados))
+
+
+def candidatos() -> list[str]:
     if os.environ.get("VALIDADOR_TIPI_URL"):
-        return os.environ["VALIDADOR_TIPI_URL"]
-    erros = []
-    for pagina in PAGINAS_TIPI:
+        return [os.environ["VALIDADOR_TIPI_URL"]]
+    return list(LINKS_TIPI)
+
+
+def baixar_planilha(baixar: Callable[[str], bytes] = _baixar) -> tuple[str, bytes]:
+    """Tenta os endereços conhecidos e, se falharem, procura o link nas páginas da Receita.
+
+    Retorna (link usado, conteúdo). Só aceita arquivo que seja uma planilha da TIPI válida.
+    """
+    erros: list[str] = []
+
+    def tentar(link: str) -> bytes | None:
         try:
-            html = baixar(pagina).decode("utf-8", errors="replace")
+            conteudo = baixar(link)
         except Exception as exc:  # noqa: BLE001
-            erros.append(f"{pagina}: {exc}")
-            continue
-        parser = _Links()
-        parser.feed(html)
-        candidatos = [link for link in parser.links if re.search(r"\.xlsx?(\?|$|/@@download)", link, re.I)
-                      or "tipi" in link.lower() and "xls" in link.lower()]
-        if candidatos:
-            return urllib.parse.urljoin(pagina, candidatos[0])
-        erros.append(f"{pagina}: nenhum link de planilha na página")
-    raise ErroTipi("link da planilha da TIPI não encontrado. " + " | ".join(erros))
+            erros.append(f"{link}: {exc}")
+            return None
+        if not conteudo.startswith(b"PK"):
+            erros.append(f"{link}: não é .xlsx")
+            return None
+        try:
+            ler_planilha(conteudo)
+        except ErroTipi as exc:
+            erros.append(f"{link}: {exc}")
+            return None
+        return conteudo
+
+    for link in candidatos():
+        conteudo = tentar(link)
+        if conteudo:
+            return link, conteudo
+    if not os.environ.get("VALIDADOR_TIPI_URL"):
+        for pagina in PAGINAS_TIPI:
+            try:
+                links = _links_na_pagina(pagina, baixar)
+            except Exception as exc:  # noqa: BLE001
+                erros.append(f"{pagina}: {exc}")
+                continue
+            for link in links:
+                conteudo = tentar(link)
+                if conteudo:
+                    return link, conteudo
+    raise ErroTipi("planilha da TIPI não encontrada no site da Receita. " + " | ".join(erros[-6:]))
 
 
 @dataclass
@@ -325,8 +376,7 @@ def atualizar(pasta: Path | None = None, pastas_existentes: list[Path] | None = 
     estado = _estado(pasta)
     estado["ultima_verificacao"] = datetime.now().isoformat(timespec="seconds")
     try:
-        link = encontrar_link_planilha(baixar)
-        conteudo = baixar(link)
+        link, conteudo = baixar_planilha(baixar)
         resultado = importar(conteudo, pasta, link, pastas_existentes)
         estado["ultimo_resultado"] = resultado.mensagem
         return resultado
@@ -361,9 +411,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.importar:
             r = importar(args.importar.read_bytes(), pasta, str(args.importar), embutida=args.embutida)
         else:
-            link = encontrar_link_planilha()
-            print(f"Baixando {link}")
-            r = importar(_baixar(link), pasta, link, embutida=args.embutida)
+            print("Baixando a TIPI do site da Receita Federal...")
+            link, conteudo = baixar_planilha()
+            print(f"Planilha obtida de {link}")
+            r = importar(conteudo, pasta, link, embutida=args.embutida)
     except (ErroTipi, OSError) as exc:
         print(f"ERRO: {exc}", file=sys.stderr)
         return 1

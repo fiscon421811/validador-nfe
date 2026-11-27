@@ -87,22 +87,41 @@ def test_ipi_conferido_sem_carregar_nada(tmp_path, monkeypatch):
     assert d.esperado == "6.5" and d.encontrado == "5.00"
 
 
-def test_atualizar_descobre_link_e_respeita_intervalo(tmp_path):
+def test_atualizar_usa_link_conhecido_e_respeita_intervalo(tmp_path):
     conteudo = planilha(BASICA)
     chamadas = []
 
     def baixar(url):
         chamadas.append(url)
-        if url == tipi.PAGINAS_TIPI[0]:
-            return b'<html><a href="/arquivos/tipi.xlsx">TIPI em Excel</a></html>'
-        if url.endswith("tipi.xlsx"):
+        if url == tipi.LINKS_TIPI[1]:
             return conteudo
-        raise OSError("inesperado")
+        raise OSError("HTTP Error 404: Not Found")
 
     r = tipi.atualizar(tmp_path, baixar=baixar)
-    assert r.atualizou and chamadas[-1] == "https://www.gov.br/arquivos/tipi.xlsx"
+    assert r.atualizou and chamadas == tipi.LINKS_TIPI[:2]
     assert not tipi.atualizar(tmp_path, baixar=baixar).atualizou  # já verificou hoje
     assert tipi.precisa_verificar(tmp_path, agora=datetime.now() + timedelta(days=2))
+
+
+def test_procura_link_na_pagina_quando_enderecos_mudam(tmp_path):
+    conteudo = planilha(BASICA)
+
+    def baixar(url):
+        if url == tipi.PAGINAS_TIPI[0]:
+            return b'<a href="/receitafederal/arquivos/nova-tipi-excel.xlsx/view">TIPI</a><a href="/x.pdf">x</a>'
+        if url == "https://www.gov.br/receitafederal/arquivos/nova-tipi-excel.xlsx/@@download/file":
+            return conteudo
+        if url in tipi.LINKS_TIPI:
+            return b"<html>pagina de erro</html>"  # 200 com HTML no lugar da planilha
+        raise OSError("404")
+
+    link, dados = tipi.baixar_planilha(baixar)
+    assert link.endswith("nova-tipi-excel.xlsx/@@download/file") and dados == conteudo
+
+
+def test_url_definida_pelo_usuario(monkeypatch):
+    monkeypatch.setenv("VALIDADOR_TIPI_URL", "https://exemplo/tipi.xlsx")
+    assert tipi.candidatos() == ["https://exemplo/tipi.xlsx"]
 
 
 def test_falha_de_rede_nao_quebra(tmp_path):
