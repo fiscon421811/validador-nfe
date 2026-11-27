@@ -23,7 +23,7 @@ class Perfil:
     regime_pis_cofins: str | None = None  # nao_cumulativo, cumulativo
 
 
-def _contexto(nota: Nota, item: Item, tributo: str, perfil: Perfil) -> Contexto:
+def contexto(nota: Nota, item: Item, tributo: str, perfil: Perfil) -> Contexto:
     regime = perfil.regime_pis_cofins if tributo in ("PIS", "COFINS") else nota.emitente.crt
     return Contexto(
         tributo=tributo,
@@ -105,7 +105,7 @@ def determinar(nota: Nota, base: BaseRegras, perfil: Perfil | None = None) -> li
         for tributo in TRIBUTOS:
             if tributo in ("PIS", "COFINS") and perfil.regime_pis_cofins is None:
                 continue
-            regra = base.buscar(_contexto(nota, item, tributo, perfil))
+            regra = base.buscar(contexto(nota, item, tributo, perfil))
             if regra is not None:
                 saida += _comparar(nota, item, tributo, regra)
     return saida

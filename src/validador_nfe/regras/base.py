@@ -169,6 +169,10 @@ class BaseRegras:
                 base.tipi_descricao = f"versão de {versoes[-1].nome}"
         return base
 
+    @property
+    def tem_tipi(self) -> bool:
+        return bool(self._ipi_por_ncm)
+
     def _adicionar(self, regras: list[Regra]) -> None:
         for r in regras:
             self._por_tributo.setdefault(r.tributo, []).append(r)

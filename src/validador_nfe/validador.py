@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from validador_nfe.checagens import checar_coerencia, checar_estrutura
+from validador_nfe.enquadramento import EnquadramentoItem, enquadrar
 from validador_nfe.divergencia import Divergencia, Severidade
 from validador_nfe.leitor import ErroLeitura, ler_nfe, validar_xsd
 from validador_nfe.modelo import Nota
@@ -17,6 +18,7 @@ class Resultado:
     arquivo: str | None
     nota: Nota | None
     divergencias: list[Divergencia] = field(default_factory=list)
+    enquadramentos: list[EnquadramentoItem] = field(default_factory=list)
 
     @property
     def situacao(self) -> str:
@@ -47,4 +49,5 @@ def validar_arquivo(caminho: Path, caminho_xsd: Path | None = None, base: BaseRe
         divergencias.append(Divergencia("X000", Severidade.ERRO, f"Não foi possível ler a nota: {exc}"))
         return Resultado(str(caminho), None, divergencias)
     divergencias += validar(nota, base, perfil)
-    return Resultado(str(caminho), nota, divergencias)
+    enquadramentos = enquadrar(nota, base, perfil) if base is not None else []
+    return Resultado(str(caminho), nota, divergencias, enquadramentos)
