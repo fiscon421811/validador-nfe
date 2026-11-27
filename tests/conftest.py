@@ -7,8 +7,22 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 @pytest.fixture(autouse=True)
 def dados_isolados(tmp_path, monkeypatch):
-    """Nenhum teste lê ou grava a TIPI baixada na pasta real do usuário."""
+    """Os testes não enxergam nenhuma TIPI real.
+
+    Nem a baixada pelo app (pasta de dados do usuário) nem a embutida em `regras/tipi/` pelo script do
+    executável: as notas de teste são fictícias e cada teste monta a sua própria TIPI quando precisa.
+    """
     monkeypatch.setenv("VALIDADOR_DADOS", str(tmp_path / "dados"))
+    from validador_nfe import tipi
+    from validador_nfe.regras.base import PASTA_PADRAO
+
+    embutida = (PASTA_PADRAO / "tipi").resolve()
+    original = tipi.listar_versoes
+
+    def sem_embutida(*pastas):
+        return original(*[p for p in pastas if not p or Path(p).resolve() != embutida])
+
+    monkeypatch.setattr(tipi, "listar_versoes", sem_embutida)
 
 
 @pytest.fixture
