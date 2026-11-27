@@ -51,7 +51,6 @@ def test_xml_que_nao_e_nfe():
         ([("<CST>00</CST><modBC>3</modBC>", "<CST>40</CST><modBC>3</modBC>")], "C008"),
         ([("<CST>01</CST><vBC>50.00</vBC><pCOFINS>", "<CST>06</CST><vBC>50.00</vBC><pCOFINS>")], "C011"),
         ([("<cClassTrib>000001</cClassTrib>", "<cClassTrib>200001</cClassTrib>")], "C014"),
-        ([("<pCBS>0.90</pCBS><vCBS>2.25</vCBS>", "<pCBS>8.80</pCBS><vCBS>22.00</vCBS>")], "C015"),
     ],
 )
 def test_cada_checagem_dispara(xml_ok, trocas, esperado):

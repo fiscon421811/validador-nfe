@@ -2,7 +2,8 @@
 
 Valida a tributação de NF-e (modelo 55): ICMS, ICMS-ST, IPI, PIS/COFINS e o grupo IBS/CBS da Reforma Tributária (LC 214/2025).
 
-Esta é a **Fase 0** do projeto: leitura do XML e checagens que não dependem de base de regras.
+Fases entregues: **Fase 0** (leitura do XML e checagens que não dependem de regras) e **Fase 1, início**
+(base de regras com vigência e determinação para ICMS próprio de SP, IPI pela TIPI, PIS/COFINS e IBS/CBS de 2026).
 A arquitetura e o roadmap estão em [Motor de validação tributária: arquitetura e MVP](https://claude.ai/artifact/LQf3RbyYCkND6m2KAvBcwQ).
 
 ## Uso
@@ -11,6 +12,8 @@ A arquitetura e o roadmap estão em [Motor de validação tributária: arquitetu
 pip install -e ".[dev]"
 validador-nfe pasta_ou_xml/ --xlsx relatorio.xlsx --json relatorio.json
 validador-nfe nota.xml --xsd schemas/nfe_v4.00.xsd   # valida também o schema oficial
+validador-nfe notas/ --regime-pis-cofins nao_cumulativo --tipi tipi.csv   # confere PIS/COFINS e IPI
+validador-nfe notas/ --sem-regras   # só checagens da Fase 0
 ```
 
 O comando sai com código 1 se alguma nota tiver erro, o que permite usá-lo em pipelines.
@@ -44,9 +47,15 @@ for d in validar(ler_nfe("nota.xml")):
 | C012 | alerta | nota de 2026 em diante sem grupo IBSCBS (regime normal) |
 | C013 | erro | formato do CST (3 dígitos) e do cClassTrib (6 dígitos) |
 | C014 | alerta | cClassTrib não começa pelo CST |
-| C015 | alerta | alíquotas de teste de 2026 (CBS 0,9%, IBS UF 0,1%, IBS municipal 0%) |
+| D001 | erro/alerta | alíquota diferente da regra vigente (alerta quando a regra é genérica, sem NCM/CEST) |
+| D002 | erro | IPI destacado para NCM não tributado na TIPI |
 
 Tolerância de arredondamento: R$ 0,01 por valor.
+
+## Base de regras
+
+As regras ficam em CSV na pasta [`regras/`](regras/README.md), cada uma com vigência e fundamento legal.
+Vence a regra mais específica que casa com a operação.
 
 ## A conferir
 
